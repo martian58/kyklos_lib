@@ -72,6 +72,7 @@ class TradingBot:
             return self.default_trade_quantity
 
     def execute_trade(self, symbol, signal):
+        price_in_usd = self.api.get_crypto_price_in_usd(symbol)
         trade_quantity = self.get_trade_quantity(symbol)
         try:
             if signal == 'BUY':
