@@ -28,6 +28,7 @@ console_handler.setFormatter(formatter)
 strategy_logger.addHandler(strategy_handler)
 strategy_logger.addHandler(console_handler)
 
+
 class TradingStrategy:
     def __init__(self, data):
         self.data = data
