@@ -37,7 +37,7 @@ class BinanceAPI:
             df = df[['open', 'high', 'low', 'close', 'volume']]
             df = df.astype(float)  # Ensure data is of type float
             
-            print(f"Data for {symbol} fetched successfully.")
+            # print(f"Data for {symbol} fetched successfully.")
             return df
 
         except Exception as e:

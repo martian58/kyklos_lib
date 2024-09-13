@@ -3,6 +3,8 @@ import pandas as pd
 import ta
 import time
 import datetime
+from binance.enums import ORDER_TYPE_MARKET, SIDE_BUY, SIDE_SELL
+
 
 class Test:
 
@@ -12,6 +14,11 @@ class Test:
         self.reset = "\033[0m"
 
         self.status = 'hold'
+        self.symbol = "BTCUSDT"
+
+        self.bought_at = ''
+        self.buy_fee = ''
+        self.bought_ammount = ''
 
     def get_latest_1minute_data(self):
         # Fetch the latest 1-hour of 1-minute candlestick data
@@ -45,50 +52,38 @@ class Test:
 
         if latest_rsi > 70:
             # If RSI is overbought, wait for it to decrease to signal a sell
-            if latest_rsi > previous_rsi > previous2_rsi > previous3_rsi:
-                print(f"\n{self.green}{current_time}{self.reset}:RSI above 70, *Increasing 4*, HOLD")
 
-            elif latest_rsi > previous_rsi > previous2_rsi:
-                print(f"\n{current_time}:RSI above 70, *Increasing 3*, HOLD")
+            # if latest_rsi > previous_rsi > previous2_rsi:
+            #     print(f"\n{self.green}{current_time}{self.reset}:RSI above 70, *Increasing 3*, HOLD")
 
-            elif latest_rsi > previous_rsi:
-                print(f"\n{current_time}:RSI above 70, *Increasing 2*, HOLD")
+            if latest_rsi > previous_rsi:
+                print(f"\n{self.green}{current_time}{self.reset}:RSI above 70, *Increasing 2*, HOLD")
 
             elif latest_rsi < previous_rsi:
-                print(f"\n{current_time}:RSI above 70, *Decresing 2*, HOLD")
-
-            elif latest_rsi < previous_rsi < previous2_rsi:
-                print(f"\n{current_time}:RSI above 70, *Decresing 3*, HOLD")
-
-            elif latest_rsi < previous_rsi < previous2_rsi < previous3_rsi:
-                print(f"\n{current_time}:RSI *Decresing* 4, SELL")
+                print(f"\n{self.green}{current_time}{self.reset}:RSI above 70, *Decresing 2*, SELL")
                 return "SELL"
+                
             else:
-                print(f"\n{current_time}:RSI *ABOVE 70*, SELL")
+                print(f"\n{self.green}{current_time}{self.reset}:RSI *ABOVE 70*, SELL")
                 return "SELL"
         
         elif latest_rsi < 30:
             # If RSI is oversold, wait for it to increase to signal a buy
             if latest_rsi < previous_rsi < previous2_rsi < previous3_rsi:
-                print(f"\n{current_time}:RSI below 30, *Decresing* 4, HOLD")
+                print(f"\n{self.green}{current_time}{self.reset}:RSI below 30, *Decresing* 4, HOLD")
 
             elif latest_rsi < previous_rsi < previous2_rsi:
-                print(f"\n{current_time}:RSI below 30, *Decresing* 3, HOLD")
+                print(f"\n{self.green}{current_time}{self.reset}:RSI below 30, *Decresing* 3, HOLD")
             
             elif latest_rsi < previous_rsi:
-                print(f"\n{current_time}:RSI below 30, *Decresing* 2, HOLD")
+                print(f"\n{self.green}{current_time}{self.reset}:RSI below 30, *Decresing* 2, HOLD")
 
             elif latest_rsi > previous_rsi:
-                print(f"\n{current_time}:RSI below 30 *Increasing 2*, HOLD")
-
-            elif latest_rsi > previous_rsi > previous2_rsi:
-                print(f"\n{current_time}:RSI above 70, *Increasing 3*, HOLD")
-
-            elif latest_rsi > previous_rsi > previous2_rsi > previous3_rsi:
-                print(f"\n{current_time}:RSI above 70, *Increasing 4*, BUY")
+                print(f"\n{self.green}{current_time}{self.reset}:RSI below 30 *Increasing 2*, BUY") 
+                return "BUY"
             else:
 
-                print(f"\n{current_time}:RSI *BELOW 30*, BUY")
+                print(f"\n{self.green}{current_time}{self.reset}:RSI *BELOW 30*, BUY")
                 return "BUY"
 
 
@@ -98,7 +93,7 @@ class Test:
                 print(f"\n{self.green}{current_time}{self.reset}: RSI is rising, possible upward trend, HOLD")
                 return "HOLD"
             else:
-                print(f"\n{current_time}: RSI is falling, possible downward trend, HOLD")
+                print(f"\n{self.green}{current_time}{self.reset}: RSI is falling, possible downward trend, HOLD")
                 return "HOLD"
         
         return "HOLD"
@@ -111,17 +106,79 @@ class Test:
             df = self.get_latest_1minute_data()
             df = self.calculate_rsi(df)
 
+
             # Drop NaN rows (first 14 rows will be NaN due to RSI window size)
             df = df.dropna(subset=['rsi'])
 
             if not df.empty:
-                action = self.analyze_rsi_trend(df)
+                action = "BUY"
 
-                if action == "SELL" or action == "BUY":
-                    break  # Exit loop on sell or buy signal
+                if action == "SELL":
+                    free_balances = self.api.get_free_balances()
+                    free_usdt = 0
+                    free_btc = 0
+
+                    for key, value in free_balances.items():
+                        if key == "USDT":
+                            # print(f"{key}: {value}")
+                            free_usdt = float(value)
+                        elif key == "BTC":
+                            free_btc = float(value)
+
+                    print(free_btc)
+                    print(free_usdt)
+                    print(free_balances)
+
+                    if (self.status == "bought" or self.status == "hold") and free_btc != 0:
+                        value_in_usd = self.api.get_crypto_price_in_usd("BTC")
+                        str_tradible_btc = "{:.5f}".format(free_btc)[:7] 
+                        fee = (float(str_tradible_btc)*float(value_in_usd)) / 1000
+
+                        if (float(value_in_usd) - (float(self.bought_at)/float(self.bought_at))*float(self.bought_ammount) > (float(self.buy_fee) + float(fee))):
+                            self.api.place_order("BTCUSDT", SIDE_SELL, str_tradible_btc )
+                            print(f"\n\n{self.green}SOLDDDDDD{self.reset}")
+                            self.status = "sold"
+                        else:
+                            print(f"\nStoped buy order, {self.green}NO PROFIT{self.reset}")
+
+                    elif self.status == "sold":
+                        print(f"\nStatus is alredy {self.green}SOLD{self.reset}")
+                        
+                if action == "BUY":
+                    free_balances = self.api.get_free_balances()
+                    free_usdt = 0
+                    free_btc = 0
+                    for key, value in free_balances.items():
+                        if key == "USDT":
+                            # print(f"{key}: {value}")
+                            free_usdt = float(value)
+                        elif key == "BTC":
+                            free_btc = float(value)
+                            
+                    if (self.status == "sold" or self.status == "hold") and (free_usdt > 0):
+                        value_in_usd = self.api.get_crypto_price_in_usd("BTC")
+                        tradible_btc = float(free_usdt) / float(value_in_usd)
+                        str_tradible_btc = "{:.5f}".format(tradible_btc)[:7]
+
+                        print(type(str_tradible_btc))
+                        print(str_tradible_btc)
+
+                        self.api.place_order("BTCUSDT", SIDE_BUY, str_tradible_btc )
+
+                        self.bought_ammount = str_tradible_btc
+                        self.bought_at = value_in_usd
+                        fee = (float(str_tradible_btc)*float(value_in_usd)) / 1000
+                        self.buy_fee = str(fee)
+                        print(f"\n\n{self.green}BOUGHTTTT{self.reset}")
+
+                        self.status = "bought"
+                    elif self.status == "bought":
+                        print(f"\nStatus is alredy {self.green}BOUGHTTT{self.reset}")
+
+                    
 
             # Wait for 1 minute before fetching new data
-            time.sleep(60)
+            time.sleep(30)
 
 if __name__ == '__main__':
     bot = Test()

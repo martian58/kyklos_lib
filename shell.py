@@ -121,7 +121,7 @@ class Shell:
 
         if price_in_usd is not None:
             value_in_usd = price_in_usd * amount
-            print(f"{amount:.8f} {symbol} is worth ${value_in_usd:.2f} USD")
+            print(f"{amount:.8f} {symbol} is worth ${value_in_usd:.7f} USD")
         else:
             print(f"Error: Could not retrieve price for {symbol}.")
 
