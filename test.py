@@ -1,4 +1,4 @@
-from kyklos.api import BinanceAPI
+from kyklos.data.api import BinanceAPI
 import pandas as pd
 import ta
 import time

@@ -1,7 +1,7 @@
 import pandas as pd
 import time, os
 import logging
-from .api import BinanceAPI
+from .data.api import BinanceAPI
 from .strategy import TradingStrategy
 from .utils import Utils
 from binance.enums import ORDER_TYPE_MARKET, SIDE_BUY, SIDE_SELL
