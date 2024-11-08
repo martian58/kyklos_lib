@@ -1,5 +1,6 @@
 from ..backtest import BacktestStrategy
 from ..data import Data
+from ..strategy import TradingStrategy
 import os
 import logging
 import datetime as dt
@@ -30,7 +31,11 @@ class Bot:
 
         data = data_obj.get_data_start_end(symbol='BTCUSDT',interval='1h', start=start.strftime("%Y-%m-%d"), end=end.strftime("%Y-%m-%d"))
 
-        print(data.close.iloc[-1])
+        strategy_obj = TradingStrategy(data=data)
+
+        strategy_obj.apply_strategy()
+
+        
 
 
 
