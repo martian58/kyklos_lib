@@ -2,6 +2,9 @@ from ..backtest import BacktestStrategy
 from ..data import Data
 import os
 import logging
+import datetime as dt
+
+
 # Ensure the 'log' directory exists
 if not os.path.exists('log'):
     os.makedirs('log')
@@ -17,21 +20,21 @@ bot_logger.addHandler(bot_handler)
 class Bot:
 
     def __init__(self) -> None:
-        pass
+        self.api_key = os.getenv('BINANCE_API_KEY')
+        self.api_secret = os.getenv('BINANCE_API_SECRET')
 
     def run(self):
-        data_obj = Data()
-        data = data_obj.get_data_last_month_1hour(symbol='BTCUSDT')
+        data_obj = Data(self.api_key, self.api_secret)
+        start = dt.datetime(2024, 10, 30)
+        end = dt.datetime.now()
 
-        backtest_obj = BacktestStrategy(data=data)
+        data = data_obj.get_data_start_end(symbol='BTCUSDT',interval='1h', start=start.strftime("%Y-%m-%d"), end=end.strftime("%Y-%m-%d"))
+
+        print(data.close.iloc[-1])
 
 
 
-        result = backtest_obj.backtest_boolinger_bands()
 
-        print(result['trades'])
-        # print(result['optimized_trades'])
-        # print(result['trades'])
 
 
     

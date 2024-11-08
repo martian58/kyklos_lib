@@ -1,19 +1,25 @@
-import os
 from binance.client import Client
-from binance.enums import ORDER_TYPE_MARKET, ORDER_TYPE_LIMIT ,SIDE_BUY, SIDE_SELL, KLINE_INTERVAL_1HOUR
-from dotenv import load_dotenv
+from binance.enums import ORDER_TYPE_MARKET
+from binance.enums import KLINE_INTERVAL_1HOUR
 import pandas as pd
 from ..utils import Utils
 
-load_dotenv()
 
 class Data:   
-    def __init__(self):
-        self.api_key = os.getenv('BINANCE_API_KEY')
-        self.api_secret = os.getenv('BINANCE_API_SECRET')
+    """Data object is for fetching historical data from binance api.
+    """    
+    def __init__(self, api_key: str, api_secret: str):
+        """Data object is for fetching historical data from binance api.
+
+        Args:
+            api_key (str): Binance API key
+            api_secret (str): Binance Secret key
+        """        
+        self.api_key = api_key
+        self.api_secret = api_secret
         self.client = Client(self.api_key, self.api_secret)
 
-    def get_historical_data(self, symbol: str, interval: str, lookback: str) -> pd.DataFrame:
+    def get_data_lookback(self, symbol: str, interval: str, lookback: str) -> pd.DataFrame:
         """_summary_
 
         Args:
@@ -42,9 +48,31 @@ class Data:
 
         except Exception as e:
             print(f"Error fetching data for {symbol}: {e}")
-            return pd.DataFrame()   
+            return pd.DataFrame()  
+
+    def get_data_start_end(self, symbol: str, interval: str, start: str, end: str) -> pd.DataFrame:
+       
+        try:
+            klines = self.client.get_historical_klines(symbol, interval, start, end)
+            
+            if not klines:
+                print(f"No data returned for {symbol}.")
+                return pd.DataFrame()  
+            
+            df = pd.DataFrame(klines, columns=['timestamp', 'open', 'high', 'low', 'close', 'volume', 'close_time', 'quote_asset_volume', 'number_of_trades', 'taker_buy_base_asset_volume', 'taker_buy_quote_asset_volume', 'ignore'])
+            df['timestamp'] = pd.to_datetime(df['timestamp'], unit='ms')
+            df.set_index('timestamp', inplace=True)
+            df = df[['open', 'high', 'low', 'close', 'volume']]
+            df = df.astype(float)
+            
+            # print(f"Data for {symbol} fetched successfully.")
+            return df
+
+        except Exception as e:
+            print(f"Error fetching data for {symbol}: {e}")
+            return pd.DataFrame()  
         
-    def get_data_last_month_1hour(self, symbol: str) ->pd.DataFrame:
+    def get_data_last_month_1hour(self, symbol: str) -> pd.DataFrame:
         try:
             klines = self.client.get_historical_klines(symbol,KLINE_INTERVAL_1HOUR , '1 month')
             

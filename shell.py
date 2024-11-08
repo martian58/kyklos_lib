@@ -4,11 +4,11 @@ import readline  # For command history and line editing
 import subprocess
 import threading
 import time
-from kyklos import BinanceAPI
+from kyklos import Data
 
 class Shell:
     def __init__(self) -> None:
-        self.api = BinanceAPI()
+        self.api = Data()
         self.commands = {
             'clear': self.clear_screen,
             'help': self.print_help,
