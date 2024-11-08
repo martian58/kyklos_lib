@@ -11,9 +11,6 @@ class BacktestStrategy:
             self.data[col] = pd.to_numeric(data[col])
         self.data.columns = ['Open', 'High', 'Low', 'Close', 'Volume']
         
-        # Handle cases where the data has zero returns or constant values
-        self.data = self.data[self.data['Close'] != self.data['Close'].shift()]
-        
         self.commission = commission
 
     def backtest_boolinger_bands(self):
@@ -28,19 +25,18 @@ class BacktestStrategy:
         stats = bt.run()
         trades = stats["_trades"]
 
-        optimized_stats = bt.optimize(
-            bollinger_period=range(10, 31, 1),
-            bollinger_std=list(np.linspace(1.5, 3.0, 4)),
-            maximize='Return [%]',
-        )
+        # optimized_stats = bt.optimize(
+        #     bollinger_period=range(10, 31, 1),
+        #     bollinger_std=list(np.linspace(1.5, 3.0, 4)),
+        #     maximize='Return [%]',
+        # )
 
-        optimized_trades = optimized_stats["_trades"]
-        strategy_values = optimized_stats["_strategy"]
+        # optimized_trades = optimized_stats["_trades"]
+        # strategy_values = optimized_stats["_strategy"]
 
         results = {
-            'trades': trades,
-            'optimized_trades': optimized_trades,
-            'strategy_values': strategy_values
+            'stats' : stats,
+            'trades': trades
         }
 
         return results
